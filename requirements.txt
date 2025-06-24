@@ -2,7 +2,4 @@ fastapi==0.104.1
 uvicorn==0.24.0
 pymysql==1.1.0
 cryptography==41.0.7
-streamlit==1.28.1
-requests==2.31.0
-uuid
 pydantic==2.5.0 

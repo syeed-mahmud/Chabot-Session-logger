@@ -1,13 +1,13 @@
-# Simple Chatbot with FastAPI and Streamlit
+# Simple Chatbot API with FastAPI
 
-A simple chatbot application with FastAPI backend, MySQL database, and Streamlit frontend.
+A simple chatbot REST API built with FastAPI backend and MySQL database. Test with Postman or any HTTP client.
 
 ## Features
 
 - 🆕 Generate random session IDs for new chat sessions
 - 💾 Store chat questions and answers in MySQL database
 - 🤖 Static "Working" response from chatbot
-- 🖥️ Simple Streamlit web interface
+- 🔗 REST API endpoints for easy integration
 - 📊 Chat history functionality
 
 ## Prerequisites
@@ -35,11 +35,9 @@ A simple chatbot application with FastAPI backend, MySQL database, and Streamlit
    - API will be available at http://localhost:8001
    - API documentation at http://localhost:8001/docs
 
-4. **Run Streamlit Frontend**
-   ```bash
-   streamlit run streamlit_app.py
-   ```
-   - Web interface will be available at http://localhost:8501
+4. **Test with Postman or HTTP Client**
+   - Import the API endpoints below into Postman
+   - Use the interactive API docs at http://localhost:8001/docs
 
 ## API Endpoints
 
@@ -74,20 +72,28 @@ The application creates two tables:
    - answer (Text)
    - created_at (Timestamp)
 
-## Usage
+## Postman Usage
 
-1. Start a new session using the sidebar button
-2. Type your questions in the chat interface
-3. Receive "Working" response from the bot
-4. View chat history within the session
-5. Load previous chat history using the sidebar button
+1. **Create New Session**:
+   - Method: POST
+   - URL: `http://localhost:8001/new-session`
+   - Copy the `session_id` from response
+
+2. **Send Chat Message**:
+   - Method: POST
+   - URL: `http://localhost:8001/chat`
+   - Body (JSON): `{"session_id": "your-session-id", "question": "Hello"}`
+
+3. **Get Chat History**:
+   - Method: GET
+   - URL: `http://localhost:8001/session/{session_id}/history`
 
 ## Technologies Used
 
 - **Backend**: FastAPI, Python
 - **Database**: MySQL (via XAMPP)
-- **Frontend**: Streamlit
 - **Database Driver**: PyMySQL
+- **API Testing**: Postman, FastAPI Swagger UI
 
 ---
 
@@ -133,21 +139,16 @@ Content-Type: application/json
 GET /session/{session_id}/history
 ```
 
-### **Frontend Connection** (Streamlit)
-```python
-# API calls from streamlit_app.py
-API_BASE_URL = "http://localhost:8001"
+### **Postman Collection Examples**
 
-# Create session
-response = requests.post(f"{API_BASE_URL}/new-session")
+#### **Environment Variables**:
+- `base_url`: `http://localhost:8001`
+- `session_id`: (save from new-session response)
 
-# Send message
-payload = {"session_id": session_id, "question": question}
-response = requests.post(f"{API_BASE_URL}/chat", json=payload)
-
-# Get history
-response = requests.get(f"{API_BASE_URL}/session/{session_id}/history")
-```
+#### **Test Sequence**:
+1. **POST** `{{base_url}}/new-session` → Save `session_id`
+2. **POST** `{{base_url}}/chat` with body: `{"session_id": "{{session_id}}", "question": "Hello"}`
+3. **GET** `{{base_url}}/session/{{session_id}}/history`
 
 ---
 
@@ -231,7 +232,8 @@ def init_database():
 
 1. **Session Management**: UUID-based unique sessions
 2. **Database**: MySQL with PyMySQL driver
-3. **API**: FastAPI with CORS enabled
-4. **Frontend**: Streamlit with requests library
+3. **API**: FastAPI with CORS enabled for cross-origin requests
+4. **Testing**: Postman-ready REST API endpoints
 5. **Auto Setup**: Database/tables created automatically
-6. **Static Response**: Always returns "Working" 
+6. **Static Response**: Always returns "Working"
+7. **Documentation**: Interactive API docs at `/docs` endpoint 

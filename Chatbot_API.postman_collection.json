@@ -1,0 +1,145 @@
+{
+	"info": {
+		"_postman_id": "chatbot-api-collection",
+		"name": "Chatbot API",
+		"description": "FastAPI Chatbot with MySQL Database",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Create New Session",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set('session_id', jsonData.session_id);",
+							"    console.log('Session ID saved: ' + jsonData.session_id);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/new-session",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"new-session"
+					]
+				},
+				"description": "Creates a new chat session and returns a unique session ID"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Send Chat Message",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"session_id\": \"{{session_id}}\",\n    \"question\": \"Hello, how are you?\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/chat",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"chat"
+					]
+				},
+				"description": "Sends a message to the chatbot and stores it in the database"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get Chat History",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/session/{{session_id}}/history",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"session",
+						"{{session_id}}",
+						"history"
+					]
+				},
+				"description": "Retrieves all chat messages for a specific session"
+			},
+			"response": []
+		},
+		{
+			"name": "4. API Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "Checks if the API is running"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8001",
+			"type": "string"
+		},
+		{
+			"key": "session_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+} 
