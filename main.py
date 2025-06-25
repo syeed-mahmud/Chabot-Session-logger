@@ -3,8 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uuid
 import pymysql
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
 from database import get_db_connection, init_database
 from models import ChatMessage, ChatResponse, SessionResponse
+
+# Load environment variables
+load_dotenv()
+
+# Initialize OpenRouter client
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+)
 
 # Initialize database on startup using lifespan
 @asynccontextmanager
@@ -25,6 +37,71 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def get_system_message():
+    return """
+    You are an expert at generating Odoo XML-RPC query code based on natural language questions.
+    Given a question, create Python code that queries an Odoo database using XML-RPC to answer it.
+    
+    CONTEXT:
+    You have access to an OdooClient class with XML-RPC connectivity:
+    - odoo.search_read(model, domain, fields, limit) - Primary method for querying
+    - Pre-imported libraries: datetime, timedelta, pandas (as pd)
+    
+    EXECUTION PATTERN:
+    Your code executes in a namespace with:
+    - 'odoo' object (authenticated OdooClient instance)
+    - datetime, timedelta, pd libraries available
+    - Code runs via exec() in execute_code method
+    
+    REQUIREMENTS:
+    1. Store main result as 'result_data' variable
+    2. Print user-friendly summary using print() statements
+    3. Use parameter names 'fields' and 'limit' in search_read calls
+    4. Use pandas for data manipulation when needed
+    5. Provide plain text summaries, not pandas/complex formats
+    6. Answer only the specific question asked
+    
+    ODOO MODEL PATTERNS:
+    - Partners: 'res.partner'
+    - Sales Orders: 'sale.order'
+    - Invoices: 'account.move'
+    - Products: 'product.product'
+    - Purchase Orders: 'purchase.order'
+    
+    DOMAIN SYNTAX:
+    - [('field', 'operator', 'value')]
+    - Operators: '=', '!=', '>', '<', '>=', '<=', 'like', 'ilike', 'in', 'not in'
+    - Combine with '&' (AND), '|' (OR)
+    
+    Return only executable Python code without explanations or markdown formatting.
+    """
+
+async def get_ai_response(question: str) -> str:
+    """Get response from OpenRouter AI model"""
+    try:
+        completion = client.chat.completions.create(
+            extra_headers={
+                "HTTP-Referer": "https://localhost:8001",  # Optional
+                "X-Title": "Chatbot API",  # Optional
+            },
+            extra_body={},
+            model="deepseek/deepseek-chat-v3-0324:free",
+            messages=[
+                {
+                    "role": "system",
+                    "content": get_system_message()
+                },
+                {
+                    "role": "user",
+                    "content": question
+                }
+            ]
+        )
+        return completion.choices[0].message.content
+    except Exception as e:
+        # Fallback response if API fails
+        return f"I'm sorry, I encountered an error: {str(e)}"
 
 @app.get("/")
 async def root():
@@ -61,10 +138,10 @@ async def create_new_session():
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_with_bot(chat_message: ChatMessage):
-    """Store chat question and return static response"""
+    """Store chat question and return AI response"""
     try:
-        # Static response
-        static_answer = "Working"
+        # Get AI response
+        ai_answer = await get_ai_response(chat_message.question)
         
         # Store in database
         connection = get_db_connection()
@@ -88,7 +165,7 @@ async def chat_with_bot(chat_message: ChatMessage):
         # Store chat message and response
         cursor.execute(
             "INSERT INTO chat_messages (session_id, question, answer) VALUES (%s, %s, %s)",
-            (chat_message.session_id, chat_message.question, static_answer)
+            (chat_message.session_id, chat_message.question, ai_answer)
         )
         connection.commit()
         cursor.close()
@@ -97,7 +174,7 @@ async def chat_with_bot(chat_message: ChatMessage):
         return ChatResponse(
             session_id=chat_message.session_id,
             question=chat_message.question,
-            answer=static_answer
+            answer=ai_answer
         )
         
     except HTTPException:
