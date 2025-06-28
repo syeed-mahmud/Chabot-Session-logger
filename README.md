@@ -1,239 +1,163 @@
-# Simple Chatbot API with FastAPI
+# Odoo Chatbot
 
-A simple chatbot REST API built with FastAPI backend and MySQL database. Test with Postman or any HTTP client.
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+A professional AI-powered natural language interface for Odoo ERP systems. Generate and execute Python code for Odoo XML-RPC queries based on natural language questions.
 
-- 🆕 Generate random session IDs for new chat sessions
-- 💾 Store chat questions and answers in MySQL database
-- 🤖 Static "Working" response from chatbot
-- 🔗 REST API endpoints for easy integration
-- 📊 Chat history functionality
+## ✨ Features
 
-## Prerequisites
+- **Natural Language Processing**: Ask questions in plain English about your Odoo data
+- **AI-Powered Code Generation**: Uses OpenRouter API to generate Python XML-RPC code
+- **Direct Execution**: Executes generated code against your Odoo instance
+- **Multiple Interfaces**: FastAPI REST API and Streamlit web interface
+- **Professional Package Structure**: Well-organized modular structure
+- **Type Hints**: Full type annotations for better development experience
 
-- Python 3.7+
-- XAMPP with MySQL running
-- phpMyAdmin accessible at localhost:8080
+## 🚀 Quick Start
 
-## Setup Instructions
+### Installation
 
-1. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/odoo-chatbot.git
+cd odoo-chatbot
 
-2. **Start XAMPP MySQL**
-   - Make sure XAMPP is running
-   - MySQL service should be active
-   - phpMyAdmin should be accessible at http://localhost:8080
-
-3. **Run FastAPI Backend**
-   ```bash
-   python main.py
-   ```
-   - API will be available at http://localhost:8001
-   - API documentation at http://localhost:8001/docs
-
-4. **Test with Postman or HTTP Client**
-   - Import the API endpoints below into Postman
-   - Use the interactive API docs at http://localhost:8001/docs
-
-## API Endpoints
-
-### 1. Create New Session
-- **POST** `/new-session`
-- Generates a random session ID and stores it in database
-- Returns: `{"session_id": "uuid", "message": "New session created successfully"}`
-
-### 2. Chat with Bot
-- **POST** `/chat`
-- Body: `{"session_id": "uuid", "question": "your question"}`
-- Stores question and returns static "Working" response
-- Returns: `{"session_id": "uuid", "question": "your question", "answer": "Working"}`
-
-### 3. Get Chat History
-- **GET** `/session/{session_id}/history`
-- Returns all chat messages for a session
-
-## Database Schema
-
-The application creates two tables:
-
-1. **chat_sessions**
-   - id (Primary Key)
-   - session_id (Unique)
-   - created_at (Timestamp)
-
-2. **chat_messages**
-   - id (Primary Key)
-   - session_id (Foreign Key)
-   - question (Text)
-   - answer (Text)
-   - created_at (Timestamp)
-
-## Postman Usage
-
-1. **Create New Session**:
-   - Method: POST
-   - URL: `http://localhost:8001/new-session`
-   - Copy the `session_id` from response
-
-2. **Send Chat Message**:
-   - Method: POST
-   - URL: `http://localhost:8001/chat`
-   - Body (JSON): `{"session_id": "your-session-id", "question": "Hello"}`
-
-3. **Get Chat History**:
-   - Method: GET
-   - URL: `http://localhost:8001/session/{session_id}/history`
-
-## Technologies Used
-
-- **Backend**: FastAPI, Python
-- **Database**: MySQL (via XAMPP)
-- **Database Driver**: PyMySQL
-- **API Testing**: Postman, FastAPI Swagger UI
-
----
-
-# 🤖 Technical Documentation
-
-## API Connections
-
-### **FastAPI Backend** (`http://localhost:8001`)
-
-#### **1. Create New Session**
-```http
-POST /new-session
-```
-**Response**:
-```json
-{
-    "session_id": "uuid-generated",
-    "message": "New session created successfully"
-}
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-#### **2. Send Chat Message**
-```http
-POST /chat
-Content-Type: application/json
+### Configuration
 
-{
-    "session_id": "uuid-here",
-    "question": "Your question"
-}
-```
-**Response**:
-```json
-{
-    "session_id": "uuid-here",
-    "question": "Your question",
-    "answer": "Working"
-}
+1. Copy the example environment file:
+```bash
+cp .env.example .env
 ```
 
-#### **3. Get Chat History**
-```http
-GET /session/{session_id}/history
+2. Edit `.env` with your credentials:
+```bash
+ODOO_URL=https://your-odoo-instance.odoo.com/
+ODOO_DB=your_database_name
+ODOO_USERNAME=your_username
+ODOO_PASSWORD=your_password
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
 
-### **Postman Collection Examples**
+### Basic Usage
 
-#### **Environment Variables**:
-- `base_url`: `http://localhost:8001`
-- `session_id`: (save from new-session response)
+#### Direct Python Usage
 
-#### **Test Sequence**:
-1. **POST** `{{base_url}}/new-session` → Save `session_id`
-2. **POST** `{{base_url}}/chat` with body: `{"session_id": "{{session_id}}", "question": "Hello"}`
-3. **GET** `{{base_url}}/session/{{session_id}}/history`
-
----
-
-## Database Handling
-
-### **Connection Setup** (`database.py`)
 ```python
-import pymysql
+from odoo_chatbot import execute_odoo_query
 
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '', 
-    'database': 'chatbot_db',
-    'charset': 'utf8mb4'
-}
+# Execute a query
+result = execute_odoo_query("Show me all partners from USA")
 
-def get_db_connection():
-    return pymysql.connect(**DB_CONFIG)
+if result['success']:
+    print("Generated Code:", result['code'])
+    print("Result:", result['text_response'])
+    print("Data:", result['data'])
+else:
+    print("Error:", result['error'])
 ```
 
-### **Database Schema**
-```sql
--- Database: chatbot_db
+## 📁 Project Structure
 
--- Sessions table
-CREATE TABLE chat_sessions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    session_id VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Messages table
-CREATE TABLE chat_messages (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    session_id VARCHAR(255) NOT NULL,
-    question TEXT NOT NULL,
-    answer TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (session_id) REFERENCES chat_sessions(session_id)
-);
+```
+odoo-chatbot/
+├── odoo_chatbot/           # Main package
+│   ├── __init__.py         # Package initialization
+│   ├── core/               # Core functionality
+│   │   ├── __init__.py
+│   │   ├── client.py       # Odoo XML-RPC client
+│   │   └── query_processor.py  # Query processing logic
+│   ├── api/                # FastAPI web API
+│   │   ├── __init__.py
+│   │   ├── main.py         # FastAPI application
+│   │   ├── models.py       # Pydantic models
+│   │   └── database.py     # Database connection
+│   └── web/                # Streamlit web interface
+│       ├── __init__.py
+│       └── streamlit_app.py
+├── examples/               # Usage examples
+│   ├── __init__.py
+│   └── example_usage.py
+├── requirements.txt       # Dependencies
+├── .env.example          # Environment template
+├── .gitignore           # Git ignore rules
+├── LICENSE              # MIT license
+├── MANIFEST.in          # Package manifest
+└── README.md           # This file
 ```
 
-### **Database Operations** (`main.py`)
+## 🔧 API Endpoints
 
-#### **Create Session**:
-```python
-session_id = str(uuid.uuid4())
-cursor.execute("INSERT INTO chat_sessions (session_id) VALUES (%s)", (session_id,))
+When running the FastAPI server:
+
+- `GET /`: Health check
+- `POST /new-session`: Create a new chat session
+- `POST /chat`: Send a message and get AI response
+- `GET /session/{session_id}/history`: Get chat history
+
+## 💡 Example Questions
+
+- "Show me all partners"
+- "Get sales orders from this month"
+- "Find products with price greater than 100"
+- "List all invoices created this year"
+- "Show me recent purchase orders"
+- "Get partners from USA with email addresses"
+
+## 🏗️ Usage
+
+### Running Components
+
+```bash
+# Run simple usage example
+python simple_usage.py
+
+# Run advanced example
+python examples/example_usage.py
+
+# Start FastAPI server
+uvicorn odoo_chatbot.api.main:app --host 0.0.0.0 --port 8001 --reload
+
+# Start Streamlit web interface
+streamlit run odoo_chatbot/web/streamlit_app.py
 ```
 
-#### **Store Message**:
-```python
-cursor.execute(
-    "INSERT INTO chat_messages (session_id, question, answer) VALUES (%s, %s, %s)",
-    (session_id, question, "Working")
-)
-```
+## 📦 Dependencies
 
-#### **Get History**:
-```python
-cursor.execute(
-    "SELECT question, answer, created_at FROM chat_messages WHERE session_id = %s ORDER BY created_at",
-    (session_id,)
-)
-```
+### Core Dependencies
+- `openai` - AI model integration
+- `python-dotenv` - Environment variable management
+- `pandas` - Data manipulation
+- `xmlrpc` - Odoo XML-RPC communication
 
-### **Auto Database Setup**
-```python
-# Runs automatically on FastAPI startup
-def init_database():
-    # Creates database if not exists
-    cursor.execute("CREATE DATABASE IF NOT EXISTS chatbot_db")
-    # Creates tables if not exist
-    cursor.execute("CREATE TABLE IF NOT EXISTS chat_sessions...")
-```
+### Optional Dependencies
+- **API**: `fastapi`, `uvicorn`, `pymysql`, `cryptography`
+- **Web**: `streamlit`, `requests`
 
----
+## 🤝 Contributing
 
-## Key Technical Points
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-1. **Session Management**: UUID-based unique sessions
-2. **Database**: MySQL with PyMySQL driver
-3. **API**: FastAPI with CORS enabled for cross-origin requests
-4. **Testing**: Postman-ready REST API endpoints
-5. **Auto Setup**: Database/tables created automatically
-6. **Static Response**: Always returns "Working"
-7. **Documentation**: Interactive API docs at `/docs` endpoint 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- Create an issue for bug reports or feature requests
+- Check the examples directory for usage patterns
+
+## ⚠️ Security Notes
+
+- Never commit your `.env` file with real credentials
+- Use environment variables or secure secret management in production
+- Validate and sanitize all user inputs
+- Review generated code before execution in production environments 
